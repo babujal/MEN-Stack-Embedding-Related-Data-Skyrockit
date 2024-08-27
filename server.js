@@ -6,8 +6,10 @@ const mongoose = require('mongoose');
 const methodOverride = require('method-override');
 const morgan = require('morgan');
 const session = require('express-session');
-
+const isSinedIn = require('./middleware/is-signed-in.js')
+const passUserToView = require('./middleware/pass-user-to-view.js')
 const authController = require('./controllers/auth.js');
+const applicationsController = require('./controllers/applications.js');
 
 const port = process.env.PORT ? process.env.PORT : '3000';
 
@@ -28,21 +30,17 @@ app.use(
   })
 );
 
+app.use(passUserToView); // use new passUserToView middleware here
+
 app.get('/', (req, res) => {
   res.render('index.ejs', {
     user: req.session.user,
   });
 });
 
-app.get('/vip-lounge', (req, res) => {
-  if (req.session.user) {
-    res.send(`Welcome to the party ${req.session.user.username}.`);
-  } else {
-    res.send('Sorry, no guests allowed.');
-  }
-});
-
 app.use('/auth', authController);
+app.use(isSinedIn); //This middleware is preventing users from going in to routes that are protected.If they are not
+app.use('/user/:userId/applications', applicationsController);
 
 app.listen(port, () => {
   console.log(`The express app is ready on port ${port}!`);
